@@ -1,6 +1,6 @@
-### AWS
+# AWS
 
-Description:
+__Description:__
 
 First iteration:
 
@@ -53,7 +53,9 @@ Wherewith our scenario is the following:
 
 When the presentation layer (interface) runs on a client and a data layer/structure (database) gets stored on a server. Basically, when each instance is run on a separate machine. It separates these two components into different locations. Having separate layers can improve performance and scalability. Easy to maintain.
 
-Let's create our two instance but without defining our VPC. We want to make two instances working properly, giving the correct service. Then we will dive into VPC.
+## Create instances for App and Database
+
+Let's create our two instance but without defining our VPC. We want to make two instances working properly, giving the correct service. We will connect our App with the Database to create our 2-Tier architecture correctly.
 
 ### EC2 INSTANCE FOR OUR NODEAPP
 
@@ -70,7 +72,7 @@ We will create the instance for the app:
 
 - Leave `Add Storage` by default.
 - Add a tag with the `Key` as `Name` and the value as `eng84_jose_app_instance`. Make sure they are relevant names.
-- Security group: we need to create one new. Name should be `eng84_jose_app_sg`. 
+- Security group: we need to create one new. Name should be `eng84_jose_app_sg` and description: `security group for app instance`. 
 
 For the SSH rule, follow these rules: Port `22`, Source `My IP`, Description `access only from my IP`.
 
@@ -101,7 +103,7 @@ Add another rule to have access to the internet and set up the service for the c
 - Go the browser and check that if the app is working properly.
 - If for same reasons you need to allow the port 3000, go to your instance, select `Security` tab. Edit your Security Group. Click in `Edit inbound rules`. Select `TCP`. Custom `3000`. Source `Anywhere` and saved.
 - Go back to your browser and enter: `public_IP_instance_app:3000`. It should be working correctly.
-- If you can see the app with only the public IP is because your provision file have installed reverse proxying with nginx. If not, we should change the configuration and restart the service nginx to only use the public IP without the port to see the app. Go to `cd /etc/nginx/sites-available/`. Remove the default file `sudo rm -rf default`. Create new one `sudo nano default` and this lines:
+- If you can see the app with only the public IP is because your provision file have installed reverse proxying with nginx. If not, we should change the configuration and restart the service nginx to only use the public IP without the port to see the app. Go to `cd /etc/nginx/sites-available/`. Remove the default file `sudo rm -rf default`. Create new one `sudo nano default` and add these lines:
 
 ````
 server {
@@ -125,6 +127,78 @@ Saved the file.
 
 ### EC2 INSTANCE FOR DATABASE
 
+We will create the instance for the database:
+
+- Click `Launch Instance`.
+- Choose `Ubuntu Server 16.04 LTS (HVM), SSD Volume Type`.
+- Choose `t2.micro` as the instance type by default.
+- In the configuration instance details:
+
+1. Change the VPC to your VPC.
+2. Change the subnet to your subnet.
+3. Make sure you enable `Auto-assign public IP` for the db. We put it public but we want only us to have access to it. This is the magic of 2-Tier architecture. But we will add the corresponding rules so that only we have access. But we need to make it public to have access to it and be able to install mongodb inside the instance.
+
+- Leave `Add Storage` by default.
+- Add a tag with the `Key` as `Name` and the value as `eng84_jose_db_instance`. Make sure they are relevant names.
+- Security group: we need to create one new. Name should be `eng84_jose_db_sg` and description: `security group for db instance`. 
+
+For the SSH rule, follow these rules: Port `22`, Source `My IP`, Description `access only from my IP`.
+
+Add another rule to be able to access the internet in the db instance, but through our private IP, because we don't want to give access to anyone else, only ourselves.. The rule should be `Custom TCP`, the port `27017`, the custome service `private IP from the instance app` (Not public for the reason that it changes everytime that we restart the instance)and the description `Allowed internet from the port 27017 only from app instance`. In this way we will have access to the db instance only for us, and we will receive internet only through the instance app. We do not want access anywhere else.
+
+- Review and Launch.
+- Select the existing DevopsStudent key:pair option for SSH, or the Key that you want to use.
+- Wait until the machine is running and passed all the tests.
+- Open a terminal and run `cd ~/.ssh`. Check that you have your key permision that allows you to connect to the instance. The same that we have selected before.
+- Go to the dashboard of the instance app. Click on the button `Connect` and select ssh.
+- Copy ssh example and go to terminal again and run the command inside the `~/.shh` directory.
+- Select yes in all the steps and you will be inside the instance.
+- Run the following commands:
+
+1. `sudo apt-get update -y`
+2. `sudo apt-get upgrade -y`
+3. `wget -qO - https://www.mongodb.org/static/pgp/server-3.2.asc | sudo apt-key add -`
+4. `echo "deb http://repo.mongodb.org/apt/ubuntu xenial/mongodb-org/3.2 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-3.2.list`
+5. `sudo apt-get update`
+6. `sudo apt-get install -y mongodb-org=3.2.20 mongodb-org-server=3.2.20 mongodb-org-shell=3.2.20 mongodb-org-mongos=3.2.20 mongodb-org-tools=3.2.20`
+7. `sudo mkdir -p /data/db`
+8. `sudo chown -R mongodb:mongodb /var/lib/mongodb`
+9. `sudo sed -i 's/127.0.0.1/0.0.0.0/g' /etc/mongod.conf`
+10. `sudo systemctl enable mongod`
+11. `sudo systemctl start mongod`
+12. Check if the service mongod is running: `sudo systemctl status mongod`
+
+- Now we have our two instances running correctly. It is time to connect App with DB.
+
+### Connection from App to Database
+
+We are going to create the environment variable to make the connection.
+
+- Go inside to the instance of the app in the terminal (ssh)
+- We will save our variable in the file `.bashrc` because we want to have a persistent variable. It will be there every moment we restart the machine.
+- Run this command: `sudo echo "export DB_HOST=mongodb://private_IP_db:27017/posts" >> /home/ubuntu/.bashrc`
+- After that run: `source ~/.bashrc`. It will check if there is any error in the file and to reload again.
+- Run `env` to check if the variable was created correctly.
+- Go back to the app folder and run the followings commands:
+
+1. `npm install`
+2. `node seeds/seed.js` to get the information from the database. We can check if the connection was established correctly.
+3. Run the app `node app.js`. Go to the browser and enter: `public_IP_app/posts`
+
+- We finished. If we can see the posts, we got the connection from the app to the database. Good job!
+
+### Create images for the two instances.
+
+- Go to the dashboard of the instances.
+- Select the instance that you want to take a snapshot.
+- Click in the button `Actions`.
+- Then `Image and templates`.
+- After that click on `Create Image`.
+- In the name `eng84_jose_tier2_app_ami` and description `eng84_jose_tier2_app_ami`.
+- Finally click `Save`. It will take a while to save it.
+- Repeat the same steps for the other instance.
+
+It will help us for the reason of when we create our vpc, we will be able to use the images of these instances instead of creating everything from scratch to be able to add them to our subnets.
 
 ### GUIDE
 
