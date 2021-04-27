@@ -215,7 +215,7 @@ It will help us for the reason of when we create our vpc, we will be able to use
 
 ### GUIDE - VPC - SUBNETS - INTERNET GATEWAY - ROUTE TABLES - NACL
 
-Before we crack on the task, let's see some definitions to understand what is the purpose of the task and why is benefit.
+Before we crack on the task, let's see some definitions to understand what is the purpose of the task and what are the benefits.
 
 __What is a VPC:__
 
@@ -246,6 +246,34 @@ __NACLS:__
 - NACLS are an added layer of defence they work at the network level.
 - NACLs are stateless, you have to have rules to allow the requests to come in and to allow the response to go back out.
 
+We will create the following NACLs for the subnets:
+
+For the __public subnet__:
+
+- Inbound rules:
+
+1. 100 -> Allows inbound HTTP 80 traffic from any IPv4 address.
+2. 110 -> Allows inbound SSH 22 traffic from your network over the internet. Make sure that custom the source with your IP.
+3. 120 -> Allows inbound return traffic from hosts on the internet that are responding to requests originating in the subnet. TCP 1024-65535.
+
+- Outbound rules:
+
+1. 100 -> To allow port 80.
+2. 110 -> We need the CIDR block and allow 27017 for outbound access to our mongo db server in private subnet.
+3. 120 -> To allow short lived port between 1024-65535.
+
+For the __private subnet__:
+
+- Inbound rules:
+
+1. 100 -> Allows All traffic from public subnet. In the source make sure you add the IP of your public subnet.
+2. 110 -> Allows inbound SSH 22 traffic from your network over the internet. Make sure that custom the source with your IP.
+3. 120 -> Allows inbound HTTP 80 traffic from any IPv4 address.
+
+- Outbound rules:
+
+1. 100 -> To allow all traffic outside, for the reason that we have the control what we want from outside in the subnet.
+
 __What is Security Group:__
 
 - Security groups work as a firewall on the instance level.
@@ -253,11 +281,37 @@ __What is Security Group:__
 - They have inbound and outbound traffic rules defined.
 - Security groups are stateful, if you allowed inbound rule that will automatically be allowed outbound.
 
+We will create the following security groups:
+
+For the __app__:
+
+- Inbound rules:
+
+1. Allow port 80 to all (Internet communication).
+2. Allow port 22 for ssh.
+
+- Outbound rules:
+
+1. Allow All traffic for the reason that we defined what we want to get from outside world before.
+
+For the __db__:
+
+- Inbound rules:
+
+1. Allow All traffic. But in source select the security group of the app. We only want to get traffic from the app.
+2. Allow port 22 for ssh.
+
+- Outbound rules:
+
+1. Allow All traffic for the reason that we defined what we want to get from outside world before.
+
 __What are the Ephemeral ports:__
 
 - They are shortly lived ports, they are automatically allocated based on the demand.
 - Allow outbound responses to client on the internet.
 - The range from 1024-65535.
+
+__Task:__
 
 Now, we are going to carry out the creation of our VPC, with its respective subnets. We are going to go step by step configuring everything correctly. We will use the two instances that we have created earlier. Finally we will create our NACL to add a layer more security to our network.
 
@@ -295,24 +349,139 @@ number must be 0. Finally we must follow that with /24.
 - The first thing we have to do is go to the route table page and identify the one that is attached to our vpc. Click on the unnamed routes tables until you find the one.
 - Rename it to `eng84_jose_public_rt`.
 - Next you're going to want to give this subnet internet access by going to `Routes` tab.
-- Click `Edit routes` and do the following:
+- Click `Edit routes` and add a new `Add route`, following this information:
 
 Set the destination to `0.0.0.0/0`.
 Set the target to `Internet Gateway`, then select your internet gateway that we have created before.
 Save the configurations.
+
+It allows have internet. That's the main point.
 
 - Now we will go back to the page we were on before and associate our public subnet with this route table, start by
 clicking on `Subnet Associations` tab and click on `Edit subnet associations`. Select the public subnet you have created and click `save`.
 - Now we want to create a new route table for the private subnet (db) with no access to the internet. We will start by clicking
 `Create route table`.
 - Set the Name tag: `eng84_jose_private_rt`.
-- Select your VPC and then click `Create`. NOTE: This route table is not connected to the internet.
+- Select your VPC and then click `Create`. NOTE: This route table is not connected to the internet like we did before with the route table for the public subnet.
 - We will now associate our private subnet in the same way as we did before.
 - With the new route table selected, select the `Subnet Associations` tab.
 - Click `Edit subnet associations` and select the private subnet you have created and finally save.
 - Your route tables are now setup.
 
-<u>__STEP 5: Creating the EC2 instances: App and DB__</u>
+<u>__STEP 5: Creating Security Groups for App and DB__</u>
+
+We proceed to create the security groups at the instance level, both for the app and for the database.
+
+Go to VPC section and search for `Security Groups` in the Security tab.
+
+- Click on `Create Security Group`.
+- Security group name: `eng84_jose_app_sg`
+- Description: `eng84_jose_app_sg`.
+- VPC: select the VPC that we have created.
+
+- Inbound rules:
+
+1. Allow port 80 to all (Internet communication), source `0.0.0.0/0`.
+2. Allow port 22 for ssh, with source My IP (only us want to access).
+
+- Outbound rules:
+
+1. Allow All traffic for the reason that we defined what we want to get from outside world before, destination `0.0.0.0/0`.
+
+Let's create another security group for the db instance.
+
+- Click on `Create Security Group`.
+- Security group name: `eng84_jose_db_sg`
+- Description: `eng84_jose_db_sg`.
+- VPC: select the VPC that we have created.
+
+- Inbound rules:
+
+1. Allow All traffic. But in source select the security group of the app. We only want to get traffic from the app.
+2. Allow port 22 for ssh, with source My IP (only us want to access).
+
+- Outbound rules:
+
+1. Allow All traffic for the reason that we defined what we want to get from outside world before, destination `0.0.0.0/0`.
+
+We have configured our security groups.
+
+<u>__STEP 6: Adding a NACL to the VPC__</u>
+
+Next we are going to add one more layer of security at the subnet level with NACL (Network Access Control List).
+
+We are going to create two NACLs, one for the public subnet and one for the private subnet.
+
+- Go to VPC section and finding the `Network ACLs`.
+- Find the unnamed NACL that is associated with your VPC ID.
+- Rename it to `eng84_jose_nacl_public_subnet`.
+
+Now we have to set the inbound rules for the NACL.
+
+- Select our NACL. Go to `Inbound rules` tab.
+- Click on `Edit inbound rules`.
+- Add the following rules:
+
+1. Rule number `100`. Type `HTTP(80)`. Source `0.0.0.0/0`. This allows external HTTP traffic to enter the network. Allows inbound HTTP 80 traffic from any IPv4 address.
+2. Rule number `110`. Type `SSH(22)`. Source My IP. This allows SSH connections to the VPC. Allows inbound SSH 22 traffic from your network over the internet.
+3. Rule number `120`. Type `Custom TCP`. Port range `1024-65535`. Source `0.0.0.0/0`. Allows inbound return traffic from hosts on the internet that are responding to requests originating in the subnet. TCP 1024-65535.
+
+- Click `Save changes`.
+
+Now we have to set the outbound rules.
+
+- Select the `Outbound rules` tab.
+- Click `Edit outbound rules`.
+- Add the following rules:
+
+- Outbound rules:
+
+1. Rule number `100`. Type `HTTP(80)`. Source `0.0.0.0/0`. To request anything outside.
+2. Rule number `110`. Type `Custom TCP`. Port range `27017`. Source `private ip subnet`(CIDR). We need the CIDR block and allow 27017 for outbound access to our mongo db server in private subnet.
+3. Rule number `120`. Type `Custom TCP`. Port range `1024-65535`. Source `0.0.0.0/0`. Allows inbound return traffic from hosts on the internet that are responding to requests originating in the subnet. TCP 1024-65535.
+
+And the last step, let's assign the subnets to the NACL.
+
+- Select the `Subnet associations` tab.
+- Click `Edit subnet associations`.
+- Select only the __public__ subnet and save.
+
+Let's create another NACL for the private subnet.
+
+- Go back to the Network ACLs section.
+- Click on `Create network ACL`.
+- Name: `eng84_jose_nacl_private_subnet`.
+- VPC: make sure you select the one that we have created before (eng84_jose_vpc).
+
+- Select our NACL that we have created. Go to `Inbound rules` tab.
+- Click on `Edit inbound rules`.
+- Add the following rules:
+
+1. Rule number `100`. Type `All traffic`. Source `public ip subnet`(CIDR). This allows external HTTP traffic to enter the network. Allows all traffic only from the public subnet, from the app.
+2. Rule number `110`. Type `SSH(22)`. Source My IP. This allows SSH connections to the VPC. Allows inbound SSH 22 traffic from your network over the internet.
+3. Rule number `120`. Type `HTTP(80)`. Source `0.0.0.0/0`. This allows external HTTP traffic to enter the network. Allows inbound HTTP 80 traffic from any IPv4 address.
+
+- Click `Save changes`.
+
+Now we have to set the outbound rules.
+
+- Select the `Outbound rules` tab.
+- Click `Edit outbound rules`.
+- Add the following rules:
+
+- Outbound rules:
+
+1. Rule number `100`. Type `All traffic`. Source `0.0.0.0/0`. To request anything outside.
+
+And the last step, let's assign the subnets to the NACL.
+
+- Select the `Subnet associations` tab.
+- Click `Edit subnet associations`.
+- Select only the __private__ subnet and save.
+
+Everything has been configured, what we need now is to create our instances and carry out the connection.
+
+<u>__STEP 7: Creating the EC2 instances: App and DB__</u>
 
 In this step we proceed to create our two instances as we did previously.
 
@@ -322,25 +491,51 @@ We will use the images that we have created of the two instances so that we do n
 
 - App instance:
 
+- Go to EC2 section and click on `AMIs`.
+- Select the image of the app that we created at the beginning of the repository.
+- Click on `Actions` and then `Launch`.
+
+We will follow the same steps as before, but with some changes.
+
+- In the section `Configure Instance Details`:
+
 1. Network: Select the VPC we created before, in the step 1.
 2. Subnet: Select the __public__ subnet we created before, in the step 3.
 3. Auto-assign Public IP: Enable.
 
-The rest of the steps are the same if you want to install everything from scratch in the case that you do not want to use the AMI:
+- In the section `Configure Security Group`:
+
+1. Select an existing security group.
+2. Select the security group for the app instance.
+
+The rest is the same as before.
 
 [App Instance](#ec2-instance-for-our-nodeapp)
 
 - DB instance:
 
+- Click again on `AMIs`.
+- Select the image of the db that we created at the beginning of the repository.
+- Click on `Actions` and then `Launch`.
+
+We will follow the same steps as before, but with some changes.
+
+- In the section `Configure Instance Details`:
+
 1. Network: Select the VPC we created before, in the step 1.
 2. Subnet: Select the __private__ subnet we created before, in the step 3.
 3. Auto-assign Public IP: Enable.
 
-The rest of the steps are the same if you want to install everything from scratch in the case that you do not want to use the AMI:
+- In the section `Configure Security Group`:
+
+1. Select an existing security group.
+2. Select the security group for the db instance.
+
+The rest is the same as before.
 
 [DB Instance](#ec2-instance-for-database)
 
-<u>__STEP 6: Connecting to the instances__</u>
+<u>__STEP 8: Connecting to the instances__</u>
 
 As we have done before, when we create both instance.
 
@@ -361,60 +556,17 @@ DB instance:
 - Execute this command to SSH into the db instance: `ssh -i ~/.ssh/DevOpsStudent.pem -o ProxyCommand="ssh -i ~/.ssh/DevOpsStudent.pem -W %h:%p ubuntu@app_public_ip" ubuntu@db_private_ip`.
 - You will be connected. But we are not connected to the internet.
 
-<u>__STEP 7: Updating the database__</u>
+<u>__STEP 9: Updating the database__</u>
 
-In this step we are going to give access to the internet from the database instance.
-
-- Let's give access to the internet in the database instance by going to the db security group. Navigate to the `Security Groups` dashboard.
-- Select the db security group and click in `Edit inbound rules`.
-- Add the following rule: Type `HTTP` and the source `0.0.0.0/0`.
-- Click `Save rules`.
-- Now, we have to navigate to the route table dashboard of AWS. We are going to change the subnet associations of our public route table.
-- Click in the public route table. Go to `Subnet Associations` tab.
-- Click in `Edit subnet associations`.
-- Now, associate both of your subnets (public and private) with this table.
-- Click `Save`.
-
-The database instance is now accessible to the internet.
+For the reason that we have given internet access to the database instance with the inbound and outbound rules, the database instance is now accessible to the internet.
 
 - SSH into the database instance just like your app instance.
-- Install everything you need to install.
-- With everything working properly, remove the private subnet from the public route table.
-- Remove the HTTP rule from the security group. The purpose was only install everything and then eliminate the access to the internet from DB instance. DB is inaccessible again.
-- Stop both machines and start again from the dashboard of AWS to set up everything again.
+- Check if everything is working properly (check mongod is running correctly for the reason that is already installed, we are using an AMI of the db instance `sudo systemctl status mongod`).
 
-<u>__STEP 8: Adding a NACL to the VPC__</u>
+<u>__STEP 10: Connect App to the Database__</u>
 
-Next we are going to add one more layer of security at the subnet level with NACL (Network Access Control List).
+Repeat the same steps like we did before:
 
-- Go to VPC section and finding the `Network ACLs`.
-- Find the unnamed NACL that is associated with your VPC ID.
-- Rename it to `eng84_jose_nacl`.
-
-Now we have to set the inbound rules for the NACL.
-
-- Select our NACL. Go to `Inbound rules` tab.
-- Click on `Edit inbound rules`.
-- Add the following rules:
-
-1. Rule number `1`. Type `HTTP(80)`. Source `0.0.0.0/0`. This allows external HTTP traffic to enter the network.
-2. Rule number `2`. Type `SSH(20)`. Source `0.0.0.0/0`. This allows SSH connections to the VPC.
-3. Rule number `3`. Type `All traffic`. Source `24.24.0.0/16` (Your VPC). This allows subnets in the VPC to talk each other.
-
-- Click `Save changes`.
-
-Now we have to set the outbound rules.
-
-- Select the `Outbound rules` tab.
-- Click `Edit outbound rules`.
-- Add the following rules:
-
-1. Rule number `1`. Type `All traffic`. Source `0.0.0.0/0`. This allows all traffic out of the vpc.
-
-And the last step, let's assign the subnets to the NACL.
-
-- Select the `Subnet associations` tab.
-- Click `Edit subnet associations`.
-- Both of the subnets should be selected (public and private).
+[Connection](#connection-from-app-to-database)
 
 Congrutalion's. If everything is working, you are done. Go to your browser and check it.
