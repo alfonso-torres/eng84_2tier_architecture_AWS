@@ -107,7 +107,7 @@ __Note:__ My provision.sh doesn't work? What can I do?:
 2. If it says Converted from DOS format then this guide will help you. If it doesn't then seek help.
 3. Do the following commands in order:
 
--`wget "http://ftp.de.debian.org/debian/pool/main/d/dos2unix/dos2unix_6.0.4-1_amd64.deb"`.
+- `wget "http://ftp.de.debian.org/debian/pool/main/d/dos2unix/dos2unix_6.0.4-1_amd64.deb"`.
 - `sudo dpkg -i dos2unix_6.0.4-1_amd64.deb`.
 - `dos2unix provision.sh`.
 
@@ -215,7 +215,51 @@ It will help us for the reason of when we create our vpc, we will be able to use
 
 ### GUIDE - VPC - SUBNETS - INTERNET GATEWAY - ROUTE TABLES - NACL
 
-We are going to carry out the creation of our VPC, with its respective subnets. We are going to go step by step configuring everything correctly. We will use the two instances that we have created earlier. Finally we will create our NACL to add a layer more security to our network.
+Before we crack on the task, let's see some definitions to understand what is the purpose of the task and why is benefit.
+
+__What is a VPC:__
+
+- VPC Virtual Private Cloud to define and control virtual network.
+- VPC enables you to launch AWS resources into a virtual network that you have. This is virtual network closely resembles a traditional network that you'd operate in your data centre.
+- It allows us to EC2 instances to communicate with each other. We can also multiple subnets within out VPC.
+- It benefits us with scalibility of infrastructure of AWS.
+
+__Internet Gateway:__
+
+- Internet is the point which allowed us to connect to Internet.
+- A gateway that you attach to your VPC to enable communication between resources in your VPC and the internet.
+
+__What is a subnet:__
+
+- Network inside the VPC, they make network more sufficient.
+- A range of IP addressess in your VPC.
+- A subnet could have multiple EC2 instances.
+- With have private and public, to limit the access.
+
+__Route Table:__
+
+- Set of rules, called routes.
+- Route tables are used to determine where external network traffic is directed.
+
+__NACLS:__
+
+- NACLS are an added layer of defence they work at the network level.
+- NACLs are stateless, you have to have rules to allow the requests to come in and to allow the response to go back out.
+
+__What is Security Group:__
+
+- Security groups work as a firewall on the instance level.
+- They are attached to the VPC and subnet.
+- They have inbound and outbound traffic rules defined.
+- Security groups are stateful, if you allowed inbound rule that will automatically be allowed outbound.
+
+__What are the Ephemeral ports:__
+
+- They are shortly lived ports, they are automatically allocated based on the demand.
+- Allow outbound responses to client on the internet.
+- The range from 1024-65535.
+
+Now, we are going to carry out the creation of our VPC, with its respective subnets. We are going to go step by step configuring everything correctly. We will use the two instances that we have created earlier. Finally we will create our NACL to add a layer more security to our network.
 
 - Make sure to choose the location of our instances `Ireland`. It will be our `availability zone`. You can select this at the top right in the main AWS dashboard.
 
