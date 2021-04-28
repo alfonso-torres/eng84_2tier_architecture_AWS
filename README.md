@@ -570,3 +570,129 @@ Repeat the same steps like we did before:
 [Connection](#connection-from-app-to-database)
 
 Congrutalion's. If everything is working, you are done. Go to your browser and check it.
+
+### Bastion Server Lab - Jump Box
+
+Now that we've created a private subnet for our database instances we have a problem. We no longer have access to them via SSH.
+
+To solve this we need to create a bastion server, also known as a jump box so that we can log in to the bastion and then from there access our database server to perform updates.
+
+- __What is a Bastion Server (Jump Box)__
+
+A special purpose computer on a network specifically designed and configured to withstand attacks.
+
+Anything that provides perimeter access control security can be considered as the Bastion Host or Bastion Server. In fact, a Bastion host also known as a Jump Box is a particular purpose computer on a network that acts as a proxy server and allows the client machines to connect to the remote server. The Bastion hosts are used in cloud environments as a server to provide access to a private network from an external network such as the Internet. Since it is exposed to potential attack, a Bastion host must be protected against the chances of penetration.
+
+Bastion hosts are there to provide a point of entry into a network containing private network instances.
+
+
+![BASTION](./bastion_server.png)
+
+- __Benefits and use case__
+
+The Bastion Server has the following advantages:
+
+1. It provides a single point for the logins in the network. This makes the firewall rules simple.
+2. A security group for fine-grained inbound access control.
+3. More security
+
+Best Practice:
+
+In the context of SSH for AWS, a bastion host is a server instance itself that you must SSH into before you are able to SSH into any of the other servers in your VPC. 
+
+As the number of EC2 instances in your AWS environment grows, so too does the number of administrative access points to those instances. Depending on where your administrators connect to your instances from, you may consider enforcing stronger network-based access controls. A best practice in this area is to use a bastion. A bastion is a special purpose server instance that is designed to be the primary access point from the Internet and acts as a proxy to your other EC2 instances. 
+
+- __Create a new public subnet called bastion__
+
+- Go to the VPC section.
+- Go to subnets
+- Click on `Create subnet`
+- Select your VPC that we have created before.
+- Subnet name: `eng84_jose_subnet_bastion`
+- Availability Zone: `Ireland, EU-WEST-1A`
+- IPv4 CIDR block: `related to your VPC CIDR` -> For example if CIDR of the subnet is 10.0.0.0/16, then choose 10.0.3.0/24
+- Click on `Create subnet`
+
+- __Create a new ubuntu instance called bastion in this subnet__
+
+The same steps like before:
+
+- Go to EC2 section.
+- Click on `Launch instances`
+
+- In the section `Configure Instance Details`:
+
+1. Network: Select the VPC we created before, in the step 1.
+2. Subnet: Select the subnet what we have created before for the bastion server.
+3. Auto-assign Public IP: Enable.
+
+- Name: `eng84_jose_bastion_server`
+
+- In the section `Configure Security Group`:
+
+1. Create a new security group: `eng84_jose_bastion_SG`
+2. Rules:
+
+- Inbound:
+
+    - Port `22`. Protocol `TCP`. Source My IP.
+
+- Outbound:
+
+    - Port `All`. Protocol `All`. Source `0.0.0.0/0`.
+    - Port `22`. Protocol `TCP`. Source `0.0.0.0/0`.
+    - Port `22`. Protocol `TCP`. Source security group of the app instance.
+    - Port `22`. Protocol `TCP`. Source security group of the db instance.
+
+- __Create a security group that only allows access on port 22 from 
+your IP__
+
+Inbound and outbound rules defined in the previous step.
+
+- __Create a security group called bastion-access that only allows 
+ssh access from the bastion group__
+
+Inbound and outbound rules defined in the previous step.
+
+- Go to your db and app security group and add the following inbound rule:
+
+1. - Port `22`. Protocol `TCP`. Source security group of the bastion instance.
+
+- Go to your NACL of the public and private subnet and the following inbound rule:
+
+1. Rule number `130`. Type `SSH (22)`. Protocol `TCP (6)`. Port range `22`. Source: CIDR IPv4 of the bastion subnet.
+
+- __SSH to your bastion server and from there SSH to your database instance__
+
+- Go to the /.ssh folder.
+- Create a file with the name `config` (in your local machine) with the following lines:
+````
+Host bastion
+  Hostname public_ip_bastion_instance
+  User ubuntu
+  IdentityFile ~/.ssh/DevOpsStudent.pem
+  ForwardAgent yes
+```` 
+- Run the following commands inside ./ssh to make sure that your Public SSH Key is configured to both the Linux Bastion host and to the instances that do not have an external IP address:
+
+1. `ssh-add -L`
+2. `ssh-add ~/.ssh/DevOpsStudent.pem`
+3. To check if it was added: `ssh-add -L`
+
+- Run: `ssh bastion`.
+- Inside the instance go to ./ssh: `cd ~/.ssh/`
+- Create another file with the name `config` (sudo nano config) with the following lines:
+````
+Host db
+  Hostname private_ip_db_instance
+  user ubuntu
+  Port 22
+Host app
+  Hostname private_ip_app_instance
+  user ubuntu
+  Port 22
+````
+
+- Finally run `ssh db` to connect to the db instance or `ssh app` to connect to the app instance.
+
+The objective is to be able to use the bastion server in order to connect to the instances that do not have internet access or which we cannot connect directly by ssh, therefore we will use the bastion host.
