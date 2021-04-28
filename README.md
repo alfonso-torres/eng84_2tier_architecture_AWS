@@ -602,7 +602,9 @@ Best Practice:
 
 In the context of SSH for AWS, a bastion host is a server instance itself that you must SSH into before you are able to SSH into any of the other servers in your VPC. 
 
-As the number of EC2 instances in your AWS environment grows, so too does the number of administrative access points to those instances. Depending on where your administrators connect to your instances from, you may consider enforcing stronger network-based access controls. A best practice in this area is to use a bastion. A bastion is a special purpose server instance that is designed to be the primary access point from the Internet and acts as a proxy to your other EC2 instances. 
+As the number of EC2 instances in your AWS environment grows, so too does the number of administrative access points to those instances. Depending on where your administrators connect to your instances from, you may consider enforcing stronger network-based access controls. A best practice in this area is to use a bastion. A bastion is a special purpose server instance that is designed to be the primary access point from the Internet and acts as a proxy to your other EC2 instances.
+
+![BASTION](./bastion_diagram.png)
 
 - __Create a new public subnet called bastion__
 
@@ -721,3 +723,28 @@ The objective is to be able to use the bastion server in order to connect to the
 - Download data.
 - Delete data.
 - Permissons of the bucket.
+
+- In order have AWSCLI we need to install the required dependencies
+- Update: `sudo apt-get update -y`
+- Python `sudo apt-get install python -y`
+- pip
+- AWSCLI: `sudo apt-get install awscli -y`
+- configure the AWSCLI with AWS keys to authenticate the access from our machine to S3.
+
+````
+aws s3
+
+aws s3 cp to copy data from your instance to S3 bucket
+
+aws s3 mb make bucket
+
+aws s3 mv move
+
+aws s3 ls list files
+
+aws s3 rb remove bucket
+
+aws s3 rm remove file/data
+
+aws s3 sync download data
+````
