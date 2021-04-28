@@ -698,3 +698,26 @@ Host app
 - Finally run `ssh db` to connect to the db instance or `ssh app` to connect to the app instance.
 
 The objective is to be able to use the bastion server in order to connect to the instances that do not have internet access or which we cannot connect directly by ssh, therefore we will use the bastion host.
+
+### What is S3
+
+- Uses Cases.
+- Benefits.
+- Setting up S3, dependencies.
+- Configure AWSCLI.
+- How can we get the authentication done to talk with S3.
+- AWS access and secret.
+- We will apply CRUD.
+- S3: you will have have a backup available to apply CRUD in the console of AWS.
+
+** We need running EC2 to ssh into the instance and AWS access and secret **
+
+- S3 is a simple storage service provided by AWS.
+- It is used to store and retrieve any amount of data, at anytime, from around the world.
+- We can also host our static website on S3.
+
+- Create a bucket from AWSCLIT.
+- Upload data.
+- Download data.
+- Delete data.
+- Permissons of the bucket.
