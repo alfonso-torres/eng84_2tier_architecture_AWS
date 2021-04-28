@@ -604,7 +604,7 @@ In the context of SSH for AWS, a bastion host is a server instance itself that y
 
 As the number of EC2 instances in your AWS environment grows, so too does the number of administrative access points to those instances. Depending on where your administrators connect to your instances from, you may consider enforcing stronger network-based access controls. A best practice in this area is to use a bastion. A bastion is a special purpose server instance that is designed to be the primary access point from the Internet and acts as a proxy to your other EC2 instances.
 
-![BASTION](./bastion_diagram.png)
+![BASTION_Scheme](./bastion_diagram.jpg)
 
 - __Create a new public subnet called bastion__
 
@@ -703,8 +703,34 @@ The objective is to be able to use the bastion server in order to connect to the
 
 ### What is S3
 
-- Uses Cases.
-- Benefits.
+![S3](./AWS_S3.png)
+
+Object storage built to store and retrieve any amount of data from anywhere.
+
+Amazon Simple Storage Service (Amazon S3) is an object storage service that offers industry-leading scalability, data availability, security, and performance. This means customers of all sizes and industries can use it to store and protect any amount of data for a range of use cases, such as data lakes, websites, mobile applications, backup and restore, archive, enterprise applications, IoT devices, and big data analytics. Amazon S3 provides easy-to-use management features so you can organize your data and configure finely-tuned access controls to meet your specific business, organizational, and compliance requirements. It is built in Python.
+
+__Benefits__
+
+- Industry-leading performance, scalability, availability, and durability: Scale your storage resources up and down without upfront investments. Amazon S3 is designed for 99.9% of data durability because it automatically creates and stores copies of all S3 objects across multiple systems. This means your data is available when needed and protected against failures, errors, and threats.
+
+- Wide range of cost-effective storage classes: Save costs without sacrificing performance by storing data across the S3 Storage Classes, which support different data access levels at corresponding rates.
+
+- Unmatched security, compliance, and audit capabilities: Store your data in Amazon S3 and secure it from unauthorized access with encryption features and access management tools.
+
+- Easily manage data and access controls: S3 gives you robust capabilities to manage access, cost, replication, and data protection.
+
+__Uses Cases__
+
+- Trello for example. Social Media. It creates an object link to give permissions for the people. Who can access and who can not access. Most of the social networks keep their data there since they can store large amounts of data with which with the simple use of the object's url they can decide who has access and who does not.
+
+- Storage for Internet: Amazon S3 is ideal when you want to store application images and videos, and render with faster performance. All AWS services (including Amazon Prime and Amazon.com), as well as Netflix and Airbnb, use Amazon S3 for this purpose. Combining Amazon S3 with Amazon CloudFront enables much faster delivery due to CloudFront’s edge locations.
+
+- Backup and Disaster Recovery: Amazon S3 is suitable for storing and archiving highly critical data or backup because it is automatically replicated cross-region, providing maximum availability and durability. For even more protection, you can use Amazon S3 versioning, which stores multiple versions of each file so it’s easy to recover the files or older copies.
+
+- Static Website Hosting: Amazon S3 stores various static objects. One interesting use case is its ability to host static websites. More and more web apps are becoming single page and static (Angular, ReactJS, etc.), and it’s costly to keep running a web server for their hosting. S3 offers a static website hosting feature that will enable you to use your own domain without incurring huge web server hosting costs.
+
+Here, we are going to cover the following topics:
+
 - Setting up S3, dependencies.
 - Configure AWSCLI.
 - How can we get the authentication done to talk with S3.
@@ -712,11 +738,13 @@ The objective is to be able to use the bastion server in order to connect to the
 - We will apply CRUD.
 - S3: you will have have a backup available to apply CRUD in the console of AWS.
 
-** We need running EC2 to ssh into the instance and AWS access and secret **
+**We need running EC2 to ssh into the instance and AWS access and secret. Make sure that in the security group, in the inbound rules you have HTTP 80 to allow from any IP and SSH 22 to connect from your IP and in the outbound rules All traffic to install and update everything.**
 
-- S3 is a simple storage service provided by AWS.
+- S3 is a simple storage service provided by AWS. S3 is global available.
 - It is used to store and retrieve any amount of data, at anytime, from around the world.
 - We can also host our static website on S3.
+
+We are going to follow the following steps to be able to use S3 within the instance that we have created:
 
 - Create a bucket from AWSCLIT.
 - Upload data.
@@ -724,12 +752,36 @@ The objective is to be able to use the bastion server in order to connect to the
 - Delete data.
 - Permissons of the bucket.
 
+Let's start:
+
 - In order have AWSCLI we need to install the required dependencies
 - Update: `sudo apt-get update -y`
 - Python `sudo apt-get install python -y`
 - pip
 - AWSCLI: `sudo apt-get install awscli -y`
-- configure the AWSCLI with AWS keys to authenticate the access from our machine to S3.
+- configure the AWSCLI with AWS keys to authenticate the access from our machine to S3: `aws configure`. Regarding the default region maku sure you enter the same like your instance. Defaul output format `json`
+- Let's check if it was configured correctly: `aws s3 ls`. It will list your buckets, folders, or objects.
+- Create a bucket: `aws s3 mb s3://eng84joses3`, mb = make bucket. Do not use capital letters or symbols.
+- Go to S3 section in AWS dashboard and check if your bucket was created correctly.
+- Create a file, any file, for example: `sudo nano README.md` and some lines of information and save it.
+- We are going to copy our object (file README) from our local machine to the bucket: `aws s3 cp README.md s3://eng84joses3`. From the instance to S3 Bucket.
+- Go to your bucket in AWS and check if the file was added correctly.
+- Select your bucket, then select your README file.
+- Try to open the file (Object URL). It mustn't allow you for the reason we don't have permissions to access.
+- Go to `Permissions` tab in the README file and change everything. Tick on read in all the options of user and save it.
+- Try to open again the file from the url of the object. You will be able to open it and see its content.
+- Remove the README file from your local machine: `rm README.md`.
+- Check if it was deleted: `ls -l`.
+- Now, we are going to sync. We will copy missing or outdated files or objects between the source and target: `aws s3 sync s3://eng84joses3`. It will download the data from S3 Bucket. In this case, README file.
+- Run `ls -l` and you will get the document that was deleted before.
+- Let's delete the file in the bucket: `aws s3 rm s3://eng84joses3/README.md`
+- Go to the bucket in the AWS and check if it was deleted.
+
+Note: to delete everything `aws s3 rm s3://eng84joses3 --recursive`. BE CAREFUL!
+
+- To delete the bucket: `aws s3 rb s3://eng84joses3`. Check if it was deleted.
+
+__Commands:__
 
 ````
 aws s3
@@ -748,3 +800,5 @@ aws s3 rm remove file/data
 
 aws s3 sync download data
 ````
+
+Click on the [link](https://docs.aws.amazon.com/cli/latest/userguide/cli-services-s3-commands.html) to have a look of the commands.
