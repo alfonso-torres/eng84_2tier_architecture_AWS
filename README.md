@@ -215,6 +215,8 @@ It will help us for the reason of when we create our vpc, we will be able to use
 
 ### GUIDE - VPC - SUBNETS - INTERNET GATEWAY - ROUTE TABLES - NACL
 
+![Diagram](./Diagram.png)
+
 Before we crack on the task, let's see some definitions to understand what is the purpose of the task and what are the benefits.
 
 __What is a VPC:__
@@ -656,7 +658,7 @@ Inbound and outbound rules defined in the previous step.
 
 - Go to your db and app security group and add the following inbound rule:
 
-1. - Port `22`. Protocol `TCP`. Source security group of the bastion instance.
+1. Port `22`. Protocol `TCP`. Source security group of the bastion instance.
 
 - Go to your NACL of the public and private subnet and the following inbound rule:
 
