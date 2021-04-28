@@ -729,6 +729,14 @@ __Uses Cases__
 
 - Static Website Hosting: Amazon S3 stores various static objects. One interesting use case is its ability to host static websites. More and more web apps are becoming single page and static (Angular, ReactJS, etc.), and it’s costly to keep running a web server for their hosting. S3 offers a static website hosting feature that will enable you to use your own domain without incurring huge web server hosting costs.
 
+__Who uses Amazon S3?__
+
+- Airbnb
+- Netflix
+- Spotify
+- Reddit
+- Social Media
+
 Here, we are going to cover the following topics:
 
 - Setting up S3, dependencies.
