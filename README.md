@@ -2,7 +2,6 @@
 
 ## Table of Contents
 
-- [Activity](#description)
 - [2-Tier Architecture](#2-tier-app-deployment-on-aws)
 - [EC2 App Instance](#ec2-instance-for-our-nodeapp)
 - [EC2 DB Instance](#ec2-instance-for-database)
