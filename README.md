@@ -6,7 +6,7 @@
 - [2-Tier Architecture](#2-tier-app-deployment-on-aws)
 - [EC2 App Instance](#ec2-instance-for-our-nodeapp)
 - [EC2 DB Instance](#ec2-instance-for-database)
-- [Task with Diagram](#guide---vpc---subnets---internet---gateway---route---tables---nacl)
+- [Task with Diagram](#guide---vpc---subnets---internet-gateway---route-tables---nacl)
 - [Bastion Server](#bastion-server-lab---jump-box)
 - [AWS S3](#what-is-s3)
 
