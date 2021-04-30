@@ -8,6 +8,7 @@
 - [Task with Diagram](#guide---vpc---subnets---internet-gateway---route-tables---nacl)
 - [Bastion Server](#bastion-server-lab---jump-box)
 - [AWS S3](#what-is-s3)
+- [Boto3 package to create and manage AWS S3](#boto3)
 
 __Description:__
 
@@ -819,3 +820,37 @@ aws s3 sync download data
 ````
 
 Click on the [link](https://docs.aws.amazon.com/cli/latest/userguide/cli-services-s3-commands.html) to have a look of the commands.
+
+### Boto3
+
+Boto3 is the name of the Python SDK for AWS. It allows you to directly create, update, and delete AWS resources from your Python scripts.
+
+![S3](./boto3.png)
+
+__Task:__
+
+Research the documentation on AWS/Python for python boto3 package to create and manage AWS S3 resources and complete all the following tasks:
+
+1. Setting up awscli and python Env with required dependencies
+2. S3 authentication setup - with aws configure on EC2
+3. Create S3 bucket using python-boto3
+4. Upload data/file to S3 bucket using python-boto3
+5. Retrieve content/file from S3 using python-boto3
+6. Delete Content from S3 using python-boto3
+7. Delete the bucket using python-boto3.
+
+- Make sure you have installed python3 `python3 --version`.
+- Install pip `sudo apt-get install python3-pip`.
+- Install Boto3 `pip3 install boto3`.
+- Create your Python environment (Pycharm, Sublime Text IDE, etc).
+- Make sure you have your keys of AWS to use them in order to authenticate to be able to do the tasks.
+- Create your `.py` and start doing the task. Go step by step.
+- Firstly authenticate.
+- Then create a bucket. Check in the dashboard of AWS S3 if it was created.
+- Then upload a file to the bucket.
+- Then sync a file from the bucket.
+- Then delete the file that is in the bucket.
+- Then delete the bucket.
+- The code is available in the folder `python-boto3`.
+
+For more information use this [link](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html)
